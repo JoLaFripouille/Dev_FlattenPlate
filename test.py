@@ -65,7 +65,7 @@ def calculer_resultat():
         longueur_initiale = float(entry_longueur_initiale.get())
 
         longueur_finale = calculer_longueur_finale(longueur_initiale, angles_values, spline)
-        label_resultat.configure(text=f"Longueur Développé :  {longueur_finale:.2f} mm")
+        label_resultat.configure(text=f"Longueur Développé (avec perte):  {longueur_finale:.2f} mm")
 
         # Générer les points pour tracer la spline
         angle_fit = np.linspace(min(angles_sorted), max(angles_sorted), 500)
@@ -80,7 +80,7 @@ def calculer_resultat():
 
 # Fonction pour afficher le graphique avec la spline cubique de la perte et les points saisis en jaune
 def afficher_graphique(angles_sorted, pertes_sorted, angle_fit, perte_spline, angles_values, pertes_values):
-    fig, ax = plt.subplots(figsize=(4, 4))
+    fig, ax = plt.subplots(figsize=(5, 4))
 
     # Tracer les points d'origine (perte au pli)
     ax.scatter(angles_sorted, pertes_sorted, color='blue', label="Perte au pli (bleu)")
@@ -134,7 +134,7 @@ angles_pli = []
 # Initialisation de la fenêtre principale
 root = ctk.CTk()
 root.title("Calcul de Développé avec Perte au Pli")
-root.geometry("800x500")
+root.geometry("900x500")
 root.protocol("WM_DELETE_WINDOW", fermer_fenetre)
 
 
@@ -188,7 +188,7 @@ btn_calculer.grid(row=1, column=0, columnspan=2, pady=10)
 frame_resultat = ctk.CTkFrame(frame_principal)
 
 label_resultat = ctk.CTkLabel(frame_resultat, text="", font=("Helvetica", 18))
-label_resultat.pack(padx=10)
+label_resultat.pack()
 
 
 
