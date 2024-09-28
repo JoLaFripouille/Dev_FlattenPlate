@@ -1,5 +1,6 @@
 import customtkinter as ctk
 import json
+import tkinter as tk
 import numpy as np
 import matplotlib
 import scipy
@@ -25,27 +26,34 @@ def calculer_longueur_finale(longueur_initiale, angles_pli, spline):
     return longueur_finale
 
 # Fonction pour mettre à jour l'interface avec les champs pour les angles
-def demander_angles():
-    frame_angles.pack(pady=10)
-    nombre_de_plis = int(entry_nombre_plis.get())
-    
-    for widget in frame_angles.winfo_children():
-        widget.destroy()
-    
-    angles_pli.clear()  # Clear previous angles
-    for i in range(nombre_de_plis):
-        label_angle = ctk.CTkLabel(frame_angles, text=f"Angle du pli {i+1}:")
-        label_angle.grid(row=i, column=0, padx=10, pady=5)
+def demander_angles(*args):
+    try:
         
-        entry_angle = ctk.CTkEntry(frame_angles)
-        entry_angle.grid(row=i, column=1, padx=10, pady=5)
-        angles_pli.append(entry_angle)
+        nombre_de_plis = int(entry_nombre_plis_var.get())  # Essayer de convertir en entier
+
+        # Si la conversion réussit, on continue
+        for widget in frame_angles.winfo_children():
+            widget.destroy()
+
+        angles_pli.clear()  # Effacer les angles précédents
+        for i in range(nombre_de_plis):
+            label_angle = ctk.CTkLabel(frame_angles, text=f"Angle du pli {i+1}:")
+            label_angle.grid(row=i, column=0, padx=10, pady=10)
+
+            entry_angle = ctk.CTkEntry(frame_angles)
+            entry_angle.grid(row=i, column=1, padx=10, pady=10)
+            angles_pli.append(entry_angle)
+
+        frame_longueur.pack(pady=10, padx=10)
     
-    frame_longueur.pack(pady=10,padx=10)
+    except ValueError:
+        # Si la conversion échoue (pas un entier), on ignore l'erreur
+        pass
+
 
 # Fonction pour calculer et afficher le résultat
 def calculer_resultat():
-    frame_resultat.pack(pady=10)
+    frame_resultat.pack(pady=10, padx=10)
     
     try:
         materiau = combobox_materiau.get()
@@ -64,7 +72,9 @@ def calculer_resultat():
 
         # Récupérer les valeurs d'angles saisies
         angles_values = [float(entry.get()) for entry in angles_pli]
-        longueur_initiale = float(entry_longueur_initiale.get())
+        expression = entry_longueur_initiale.get()
+        result = eval(expression)
+        longueur_initiale = float(result)
 
         longueur_finale = calculer_longueur_finale(longueur_initiale, angles_values, spline)
         label_resultat.configure(text=f"Longueur Développé :  {longueur_finale:.2f} mm")
@@ -136,61 +146,63 @@ angles_pli = []
 # Initialisation de la fenêtre principale
 root = ctk.CTk()
 root.title("Calcul de Développé avec Perte au Pli")
-root.geometry("800x500")
+root.geometry("750x575")
+root.resizable(False,False)
 root.protocol("WM_DELETE_WINDOW", fermer_fenetre)
 
+# Créer une variable pour surveiller les changements dans l'entrée "Nombre de plis"
+entry_nombre_plis_var = tk.StringVar()
+entry_nombre_plis_var.trace("w", demander_angles)  # Appeler demander_angles à chaque changement
 
-
-frame_principal = ctk.CTkFrame(root)
-frame_principal.grid(row=0, column=1, padx=10, pady=15)
+frame_principal = ctk.CTkFrame(root, width=450, corner_radius=10)
+frame_principal.grid(row=0, column=1, pady=15)
 
 frame_graphique = ctk.CTkFrame(root)
-frame_graphique.grid(row=0, column=0, padx=10, pady=15)
+frame_graphique.grid(row=0, column=0, padx=15, pady=15)
 
 # Frame pour la sélection du matériau
 frame_materiau = ctk.CTkFrame(frame_principal)
-frame_materiau.pack(pady=10, padx=10)
+frame_materiau.pack(pady=10, padx=20)
 
 label_materiau = ctk.CTkLabel(frame_materiau, text="Sélectionnez la matière:")
-label_materiau.grid(row=0, column=0, padx=10, pady=5)
+label_materiau.grid(row=0, column=0, padx=10, pady=7)
 
-combobox_materiau = ctk.CTkComboBox(frame_materiau, values=list(donnees_materiaux.keys()))
+combobox_materiau = ctk.CTkComboBox(frame_materiau, width=170, values=list(donnees_materiaux.keys()))
 combobox_materiau.grid(row=0, column=1, padx=10, pady=5)
 combobox_materiau.set(list(donnees_materiaux.keys())[0])  # Sélectionner automatiquement la première matière
 
 # Frame pour entrer le nombre de plis
 frame_nombre_plis = ctk.CTkFrame(frame_principal)
-frame_nombre_plis.pack(pady=10)
+frame_nombre_plis.pack(pady=10, padx=10)
 
 label_nombre_plis = ctk.CTkLabel(frame_nombre_plis, text="Nombre de plis:")
-label_nombre_plis.grid(row=0, column=0, padx=10, pady=5)
+label_nombre_plis.grid(row=0, column=0, padx=15, pady=7)
 
-entry_nombre_plis = ctk.CTkEntry(frame_nombre_plis)
-entry_nombre_plis.grid(row=0, column=1, padx=10, pady=5)
-
-btn_valider_nombre_plis = ctk.CTkButton(frame_nombre_plis, text="Entrer", command=demander_angles)
-btn_valider_nombre_plis.grid(row=1, column=0, columnspan=2, pady=10)
+# Lier la variable à l'entrée "Nombre de plis"
+entry_nombre_plis = ctk.CTkEntry(frame_nombre_plis, textvariable=entry_nombre_plis_var)
+entry_nombre_plis.grid(row=0, column=1, padx=10, pady=7)
 
 # Frame pour entrer les angles de chaque pli
-frame_angles = ctk.CTkFrame(frame_principal)
+frame_angles = ctk.CTkScrollableFrame(frame_principal, width=285)
+frame_angles.pack(pady=10)
 
 # Frame pour entrer la longueur initiale
-frame_longueur = ctk.CTkFrame(frame_principal)
+frame_longueur = ctk.CTkFrame(frame_principal, width=350)
 
 label_longueur_initiale = ctk.CTkLabel(frame_longueur, text="Somme des cotes exterieur:")
-label_longueur_initiale.grid(row=0, column=0, padx=10, pady=5)
+label_longueur_initiale.grid(row=0, column=0, padx=10, pady=10)
 
 entry_longueur_initiale = ctk.CTkEntry(frame_longueur)
-entry_longueur_initiale.grid(row=0, column=1, padx=10, pady=5)
+entry_longueur_initiale.grid(row=0, column=1, padx=10, pady=10)
 
 btn_calculer = ctk.CTkButton(frame_longueur, text="Calculer", command=calculer_resultat)
 btn_calculer.grid(row=1, column=0, columnspan=2, pady=10)
 
 # Frame pour afficher le résultat
-frame_resultat = ctk.CTkFrame(frame_principal)
+frame_resultat = ctk.CTkFrame(frame_principal,border_width=2, corner_radius=20, border_color='white')
 
-label_resultat = ctk.CTkLabel(frame_resultat, text="", font=("Helvetica", 18))
-label_resultat.pack(padx=10)
+label_resultat = ctk.CTkLabel(frame_resultat, text="", font=("Helvetica", 18),corner_radius=10)
+label_resultat.pack(padx=10,pady=5)
 
 
 
