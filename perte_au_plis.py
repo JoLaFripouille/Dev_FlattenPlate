@@ -18,6 +18,26 @@ image_copier = image_copier = ctk.CTkImage(light_image=Image.open("img/copy.png"
 
 matplotlib.use('TkAgg')  # Utilise le backend Tkinter au lieu de Qt
 
+def lunch_generate_DXF():
+    btn_DXF.place_forget()
+    frame_DXF.place(x=15, y=15+320+15)
+
+def generer():
+    try:
+        hauteur = longueur_finale
+        largeur = float(entry_largeur.get())
+        bouleen = var_bouleen.get()
+        chemin_dossier = label_chemin_dossier.cget("text")
+        nom_fichier = entry_name.get()
+
+        if not chemin_dossier or not nom_fichier:
+            messagebox.showwarning("Attention", "Veuillez spécifier le chemin du dossier et le nom du fichier.")
+            return
+
+        generer_dxf(hauteur, largeur, bouleen, chemin_dossier, nom_fichier)
+    except ValueError:
+        messagebox.showerror("Erreur", "Veuillez entrer des valeurs numériques valides pour la hauteur et la largeur.")
+
 def ouvrir_dossier():
     dossier = filedialog.askdirectory()
     if dossier:
@@ -28,16 +48,6 @@ def generer_dxf(hauteur, largeur, bouleen, chemin_dossier, nom_fichier):
     Génère un fichier DXF contenant un rectangle de dimensions spécifiées.
     Optionnellement, ajoute deux cercles de diamètre 3.5 aux coins supérieurs
     gauche et droit du rectangle, à une distance de 5 unités des bords.
-
-    Paramètres:
-    - hauteur (float): Hauteur du rectangle.
-    - largeur (float): Largeur du rectangle.
-    - bouleen (bool): Si True, ajoute les deux cercles au rectangle.
-    - chemin_dossier (str): Chemin vers le dossier où le fichier DXF sera enregistré.
-    - nom_fichier (str): Nom du fichier DXF (doit se terminer par '.dxf').
-
-    Retour:
-    - Aucun
     """
     # Vérifie que le dossier existe, sinon le crée
     if not os.path.exists(chemin_dossier):
@@ -68,6 +78,8 @@ def generer_dxf(hauteur, largeur, bouleen, chemin_dossier, nom_fichier):
     # Enregistre le fichier DXF
     chemin_complet = os.path.join(chemin_dossier, nom_fichier)
     doc.saveas(chemin_complet)
+
+    popup(f'{nom_fichier}.dxf', "à été créé avec succès")
 
 
 
@@ -110,16 +122,11 @@ def demander_angles(*args):
     except ValueError:
         # Si la conversion échoue (pas un entier), on ignore l'erreur
         pass
-
-# Fonction pour copier la valeur dans le presse-papiers et afficher la notification animée
-def copier_texte_au_presse_papiers():
-    root.clipboard_clear()  # Vider le presse-papiers
-    valeur = longueur_finale  # Valeur à copier dans le presse-papiers
-    root.clipboard_append(valeur)  # Ajouter la valeur au presse-papiers
-
-    # Créer une petite frame temporaire en haut à gauche de root
-    frame_popup = ctk.CTkFrame(root, width=250, height=30, corner_radius=15, border_width=2)
-    label_popup = ctk.CTkLabel(frame_popup,height=20, text=f" '{valeur:.2f}' copié dans le presse-papiers")
+    
+def popup(valeur,suffixe):
+        # Créer une petite frame temporaire en haut à gauche de root
+    frame_popup = ctk.CTkFrame(root, width=250, height=30, corner_radius=0, border_width=2)
+    label_popup = ctk.CTkLabel(frame_popup,height=20, text=f'"{valeur}" {suffixe}',font=("Dubai",16))
     label_popup.pack(pady=5, padx=20)
 
     # Fonction pour animer l'entrée par le haut
@@ -140,6 +147,16 @@ def copier_texte_au_presse_papiers():
 
     # Démarrer l'animation par le haut
     entrer_par_le_haut()
+    
+    
+# Fonction pour copier la valeur dans le presse-papiers et afficher la notification animée
+def copier_texte_au_presse_papiers():
+    root.clipboard_clear()  # Vider le presse-papiers
+    valeur = longueur_finale  # Valeur à copier dans le presse-papiers
+    root.clipboard_append(valeur)  # Ajouter la valeur au presse-papiers
+    
+    popup(f'{valeur:.2f}',"copié dans le presse-papiers")
+
 
     
 # Fonction pour calculer et afficher le résultat
@@ -148,6 +165,7 @@ def calculer_resultat():
     global longueur_finale
     
     frame_resultat.pack(pady=10, padx=10)
+    
     
     try:
         materiau = combobox_materiau.get()
@@ -180,7 +198,7 @@ def calculer_resultat():
         # Calculer les pertes pour les angles entrés par l'utilisateur
         pertes_values = spline(angles_values)
         
-        
+        btn_DXF.place(x=15, y=15+320+15)
 
         afficher_graphique(angles_sorted, pertes_sorted, angle_fit, perte_spline, angles_values, pertes_values)
     except Exception as e:
@@ -242,7 +260,7 @@ angles_pli = []
 # Initialisation de la fenêtre principale
 root = ctk.CTk()
 root.title("Calcul de Développé avec Perte au Pli")
-root.geometry("750x590")
+root.geometry("770x670")
 root.resizable(False,False)
 root.protocol("WM_DELETE_WINDOW", fermer_fenetre)
 
@@ -256,32 +274,45 @@ frame_principal.place(x=15+320+15, y=15)
 frame_graphique = ctk.CTkFrame(root)
 frame_graphique.place(x=15, y=15)
 
-frame_DXF = ctk.CTkFrame(root, width=320,height=235,corner_radius=15)
-frame_DXF.place(x=15, y=15+320+15)
+frame_DXF_height=295
+frame_DXF = ctk.CTkFrame(root, width=320,height=frame_DXF_height,corner_radius=15)
 
-frame_DXF_largeur = ctk.CTkFrame(frame_DXF, width=320,height=230,corner_radius=15)
-frame_DXF_largeur.place(x=10,y=10)
+frame_DXF_name_height = 58
+frame_DXF_name = ctk.CTkFrame(frame_DXF, width=320,corner_radius=15)
+frame_DXF_name.place(x=10,y=10)
 
-label_longueur = ctk.CTkLabel(frame_DXF_largeur, text="Longueur:")
-label_longueur.pack(side='left',pady=10,padx=5)
+label_name = ctk.CTkLabel(frame_DXF_name, text="Nom de pièce :")
+label_name.pack(side='left',pady=10,padx=10)
+entry_name = ctk.CTkEntry(frame_DXF_name)
+entry_name.pack(pady=10,padx=10)
+
+
+frame_DXF_largeur = ctk.CTkFrame(frame_DXF, width=320,corner_radius=15)
+frame_DXF_largeur.place(x=10,y=10+frame_DXF_name_height)
+
+label_longueur = ctk.CTkLabel(frame_DXF_largeur, text="Longueur :       ")
+label_longueur.pack(side='left',pady=10,padx=10)
 entry_largeur = ctk.CTkEntry(frame_DXF_largeur)
 entry_largeur.pack(pady=10,padx=10)
+
 var_bouleen = ctk.BooleanVar()
 checkbox_bouleen = ctk.CTkCheckBox(frame_DXF, text="Ajouter des percages pour suspendre", variable=var_bouleen)
-checkbox_bouleen.place(x=15,y=10+30+28)
+checkbox_bouleen.place(x=15,y=10+30+28+frame_DXF_name_height)
 
 frame_chemin_dossier = ctk.CTkFrame(frame_DXF,width=320,height=210,corner_radius=15)
-frame_chemin_dossier.place(x=10,y=10+30+28*2+5)
+frame_chemin_dossier.place(x=10,y=10+30+28*2+5+frame_DXF_name_height)
 
 label_chemin_dossier = ctk.CTkLabel(frame_chemin_dossier, text="Aucun dossier sélectionné", anchor="w")
 label_chemin_dossier.pack(side="bottom", padx=1,pady=3)
 bouton_parcourir = ctk.CTkButton(frame_chemin_dossier,width=200, text="Parcourir", command=ouvrir_dossier)
 bouton_parcourir.pack(side="top", padx=48, pady=5)
-btn_generate_DXF = ctk.CTkButton(frame_DXF, text="Generer le fichier DXF",width=300,height=42,corner_radius=15,fg_color='transparent',border_width=2,font=("Helvetica",16))
-btn_generate_DXF.place(x=10,y=10+50+28*4+10)
+btn_generate_DXF = ctk.CTkButton(frame_DXF, text="Génerer le fichier DXF",width=300,height=42,corner_radius=15,fg_color='transparent',border_width=2,font=("Dubai",18),command=generer)
+btn_generate_DXF.place(x=10,y=(frame_DXF_height-42)-10)
 
-btn_DXF = ctk.CTkButton(root, text="Generer un fichier DXF", height=235, width=320,corner_radius=15,fg_color='transparent',border_width=2,font=("Helvetica",20))
-#btn_DXF.place(x=15, y=15+320+15)
+btn_DXF = ctk.CTkButton(root, text="Génerer un fichier DXF", command=lunch_generate_DXF, height=frame_DXF_height, width=320,corner_radius=15,fg_color='transparent',border_width=2,font=("Dubai",25))
+#
+
+
 
 # Frame pour la sélection du matériau
 frame_materiau = ctk.CTkFrame(frame_principal)
