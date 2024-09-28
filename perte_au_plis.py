@@ -3,12 +3,73 @@ import json
 import tkinter as tk
 import numpy as np
 import matplotlib
+import os
+import ezdxf
 import scipy
+import PIL
+from PIL import Image
 from scipy.interpolate import CubicSpline
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from tkinter import filedialog, messagebox
+
+# Charger l'image (assurez-vous que l'image "copy.png" est dans le dossier "img")
+image_copier = image_copier = ctk.CTkImage(light_image=Image.open("img/copy.png"), dark_image=Image.open("img/copyL.png"), size=(24, 24))
 
 matplotlib.use('TkAgg')  # Utilise le backend Tkinter au lieu de Qt
+
+def ouvrir_dossier():
+    dossier = filedialog.askdirectory()
+    if dossier:
+        label_chemin_dossier.configure(text=dossier)
+
+def generer_dxf(hauteur, largeur, bouleen, chemin_dossier, nom_fichier):
+    """
+    Génère un fichier DXF contenant un rectangle de dimensions spécifiées.
+    Optionnellement, ajoute deux cercles de diamètre 3.5 aux coins supérieurs
+    gauche et droit du rectangle, à une distance de 5 unités des bords.
+
+    Paramètres:
+    - hauteur (float): Hauteur du rectangle.
+    - largeur (float): Largeur du rectangle.
+    - bouleen (bool): Si True, ajoute les deux cercles au rectangle.
+    - chemin_dossier (str): Chemin vers le dossier où le fichier DXF sera enregistré.
+    - nom_fichier (str): Nom du fichier DXF (doit se terminer par '.dxf').
+
+    Retour:
+    - Aucun
+    """
+    # Vérifie que le dossier existe, sinon le crée
+    if not os.path.exists(chemin_dossier):
+        os.makedirs(chemin_dossier)
+
+    # Vérifie que le nom du fichier se termine par '.dxf'
+    if not nom_fichier.lower().endswith('.dxf'):
+        nom_fichier += '.dxf'
+
+    # Crée un nouveau document DXF
+    doc = ezdxf.new(dxfversion='R2010')
+    msp = doc.modelspace()
+
+    # Trace le rectangle
+    points = [(0, 0), (largeur, 0), (largeur, hauteur), (0, hauteur), (0, 0)]
+    msp.add_lwpolyline(points, close=True)
+
+    # Ajoute les cercles si bouleen est True
+    if bouleen:
+        rayon = 1.75  # Diamètre 3.5 divisé par 2
+        # Centre du cercle gauche
+        centre_gauche = (5, hauteur - 5)
+        # Centre du cercle droit
+        centre_droit = (largeur - 5, hauteur - 5)
+        msp.add_circle(centre_gauche, rayon)
+        msp.add_circle(centre_droit, rayon)
+
+    # Enregistre le fichier DXF
+    chemin_complet = os.path.join(chemin_dossier, nom_fichier)
+    doc.saveas(chemin_complet)
+
+
 
 def fermer_fenetre():
     root.quit()  # Arrête la boucle principale de tkinter
@@ -50,9 +111,42 @@ def demander_angles(*args):
         # Si la conversion échoue (pas un entier), on ignore l'erreur
         pass
 
+# Fonction pour copier la valeur dans le presse-papiers et afficher la notification animée
+def copier_texte_au_presse_papiers():
+    root.clipboard_clear()  # Vider le presse-papiers
+    valeur = longueur_finale  # Valeur à copier dans le presse-papiers
+    root.clipboard_append(valeur)  # Ajouter la valeur au presse-papiers
 
+    # Créer une petite frame temporaire en haut à gauche de root
+    frame_popup = ctk.CTkFrame(root, width=250, height=30, corner_radius=15, border_width=2)
+    label_popup = ctk.CTkLabel(frame_popup,height=20, text=f" '{valeur:.2f}' copié dans le presse-papiers")
+    label_popup.pack(pady=5, padx=20)
+
+    # Fonction pour animer l'entrée par le haut
+    def entrer_par_le_haut(y=0):
+        if y <= 10:  # La position finale en y est 10
+            frame_popup.place(x=10, y=y)
+            root.after(10, entrer_par_le_haut, y+1)  # Déplacer de 5 pixels à chaque itération
+        else:
+            root.after(2000, glisser_vers_la_gauche)  # Attendre 2 secondes avant de faire glisser la fenêtre
+
+    # Fonction pour animer la sortie vers la gauche
+    def glisser_vers_la_gauche(x=10):
+        if x >= -210:  # La frame doit disparaître en sortant de l'écran (largeur de la frame = 200)
+            frame_popup.place(x=x, y=10)
+            root.after(10, glisser_vers_la_gauche, x-6)  # Déplacer de 5 pixels vers la gauche à chaque itération
+        else:
+            frame_popup.destroy()  # Détruire la frame après qu'elle ait disparu
+
+    # Démarrer l'animation par le haut
+    entrer_par_le_haut()
+
+    
 # Fonction pour calculer et afficher le résultat
 def calculer_resultat():
+    
+    global longueur_finale
+    
     frame_resultat.pack(pady=10, padx=10)
     
     try:
@@ -77,7 +171,7 @@ def calculer_resultat():
         longueur_initiale = float(result)
 
         longueur_finale = calculer_longueur_finale(longueur_initiale, angles_values, spline)
-        label_resultat.configure(text=f"Longueur Développé :  {longueur_finale:.2f} mm")
+        label_resultat.configure(text=f"Développé :  {longueur_finale:.2f} mm")
 
         # Générer les points pour tracer la spline
         angle_fit = np.linspace(min(angles_sorted), max(angles_sorted), 500)
@@ -85,6 +179,8 @@ def calculer_resultat():
 
         # Calculer les pertes pour les angles entrés par l'utilisateur
         pertes_values = spline(angles_values)
+        
+        
 
         afficher_graphique(angles_sorted, pertes_sorted, angle_fit, perte_spline, angles_values, pertes_values)
     except Exception as e:
@@ -146,7 +242,7 @@ angles_pli = []
 # Initialisation de la fenêtre principale
 root = ctk.CTk()
 root.title("Calcul de Développé avec Perte au Pli")
-root.geometry("750x575")
+root.geometry("750x590")
 root.resizable(False,False)
 root.protocol("WM_DELETE_WINDOW", fermer_fenetre)
 
@@ -155,10 +251,37 @@ entry_nombre_plis_var = tk.StringVar()
 entry_nombre_plis_var.trace("w", demander_angles)  # Appeler demander_angles à chaque changement
 
 frame_principal = ctk.CTkFrame(root, width=450, corner_radius=10)
-frame_principal.grid(row=0, column=1, pady=15)
+frame_principal.place(x=15+320+15, y=15)
 
 frame_graphique = ctk.CTkFrame(root)
-frame_graphique.grid(row=0, column=0, padx=15, pady=15)
+frame_graphique.place(x=15, y=15)
+
+frame_DXF = ctk.CTkFrame(root, width=320,height=235,corner_radius=15)
+frame_DXF.place(x=15, y=15+320+15)
+
+frame_DXF_largeur = ctk.CTkFrame(frame_DXF, width=320,height=230,corner_radius=15)
+frame_DXF_largeur.place(x=10,y=10)
+
+label_longueur = ctk.CTkLabel(frame_DXF_largeur, text="Longueur:")
+label_longueur.pack(side='left',pady=10,padx=5)
+entry_largeur = ctk.CTkEntry(frame_DXF_largeur)
+entry_largeur.pack(pady=10,padx=10)
+var_bouleen = ctk.BooleanVar()
+checkbox_bouleen = ctk.CTkCheckBox(frame_DXF, text="Ajouter des percages pour suspendre", variable=var_bouleen)
+checkbox_bouleen.place(x=15,y=10+30+28)
+
+frame_chemin_dossier = ctk.CTkFrame(frame_DXF,width=320,height=210,corner_radius=15)
+frame_chemin_dossier.place(x=10,y=10+30+28*2+5)
+
+label_chemin_dossier = ctk.CTkLabel(frame_chemin_dossier, text="Aucun dossier sélectionné", anchor="w")
+label_chemin_dossier.pack(side="bottom", padx=1,pady=3)
+bouton_parcourir = ctk.CTkButton(frame_chemin_dossier,width=200, text="Parcourir", command=ouvrir_dossier)
+bouton_parcourir.pack(side="top", padx=48, pady=5)
+btn_generate_DXF = ctk.CTkButton(frame_DXF, text="Generer le fichier DXF",width=300,height=42,corner_radius=15,fg_color='transparent',border_width=2,font=("Helvetica",16))
+btn_generate_DXF.place(x=10,y=10+50+28*4+10)
+
+btn_DXF = ctk.CTkButton(root, text="Generer un fichier DXF", height=235, width=320,corner_radius=15,fg_color='transparent',border_width=2,font=("Helvetica",20))
+#btn_DXF.place(x=15, y=15+320+15)
 
 # Frame pour la sélection du matériau
 frame_materiau = ctk.CTkFrame(frame_principal)
@@ -202,7 +325,10 @@ btn_calculer.grid(row=1, column=0, columnspan=2, pady=10)
 frame_resultat = ctk.CTkFrame(frame_principal,border_width=2, corner_radius=20, border_color='white')
 
 label_resultat = ctk.CTkLabel(frame_resultat, text="", font=("Helvetica", 18),corner_radius=10)
-label_resultat.pack(padx=10,pady=5)
+label_resultat.grid(row=0,column=0,padx=10,pady=5)
+
+btn_copier = ctk.CTkButton(frame_resultat,width=36,height=36,image=image_copier,corner_radius=15, text="", fg_color='transparent', command=copier_texte_au_presse_papiers)
+btn_copier.grid(row=0,column=1,pady=5, padx=9)
 
 
 
