@@ -2,10 +2,12 @@ import customtkinter as ctk
 import json
 import numpy as np
 import matplotlib
-matplotlib.use('TkAgg')  # Utilise le backend Tkinter au lieu de Qt
+import scipy
 from scipy.interpolate import CubicSpline
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
+matplotlib.use('TkAgg')  # Utilise le backend Tkinter au lieu de Qt
 
 def fermer_fenetre():
     root.quit()  # Arrête la boucle principale de tkinter
