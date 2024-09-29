@@ -8,11 +8,30 @@ import tkinter
 import scipy
 import os
 import ezdxf
+import sys
 from PIL import Image
 from scipy.interpolate import CubicSpline
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from tkinter import filedialog, messagebox
+
+
+def get_resource_path(relative_path):
+    """Get the absolute path to a resource in the bundled executable."""
+    try:
+        # PyInstaller crée un dossier temporaire et stocke le chemin des fichiers dedans
+        base_path = sys._MEIPASS2
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
+
+# Pour les autres images dans le dossier img
+image_path1 = get_resource_path('img\\copyL.png')
+image_path2 = get_resource_path('img\\copy.png')
+
+
 
 matplotlib.use("TkAgg")  # Utilise le backend Tkinter
 
@@ -32,8 +51,8 @@ class Application(ctk.CTk):
 
         # Chargement des images
         self.image_copier = ctk.CTkImage(
-            light_image=Image.open("img/copy.png"),
-            dark_image=Image.open("img/copyL.png"),
+            light_image=Image.open(image_path2),
+            dark_image=Image.open(image_path1),
             size=(24, 24),
         )
 
