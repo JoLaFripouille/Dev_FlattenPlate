@@ -3,6 +3,9 @@ import json
 import tkinter as tk
 import numpy as np
 import matplotlib
+import PIL
+import tkinter
+import scipy
 import os
 import ezdxf
 from PIL import Image

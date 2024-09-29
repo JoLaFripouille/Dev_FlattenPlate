@@ -1,0 +1,16 @@
+# Ignorer l'environnement virtuel
+env/
+EXE/
+
+# Ignorer les dossiers et fichiers générés par PyInstaller
+build/
+dist/
+*.spec
+
+# Ignorer les fichiers compilés
+*.pyc
+__pycache__/
+
+# Ignorer les fichiers de logs et temporaires
+*.log
+*.tmp
