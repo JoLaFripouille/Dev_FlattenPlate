@@ -91,18 +91,18 @@ class Application(ctk.CTk):
         self.entry_name = ctk.CTkEntry(self.frame_DXF_name)
         self.entry_name.pack(pady=10, padx=10)
 
-        # Cadre pour la largeur
-        self.frame_DXF_largeur = ctk.CTkFrame(
+        # Cadre pour la longueur
+        self.frame_DXF_longueur = ctk.CTkFrame(
             self.frame_DXF, width=320, corner_radius=15
         )
-        self.frame_DXF_largeur.place(x=10, y=10 + self.frame_DXF_name_height)
+        self.frame_DXF_longueur.place(x=10, y=10 + self.frame_DXF_name_height)
 
-        self.label_largeur = ctk.CTkLabel(
-            self.frame_DXF_largeur, text="Largeur :       "
+        self.label_longueur = ctk.CTkLabel(
+            self.frame_DXF_longueur, text="Longueur :       "
         )
-        self.label_largeur.pack(side="left", pady=10, padx=10)
-        self.entry_largeur = ctk.CTkEntry(self.frame_DXF_largeur)
-        self.entry_largeur.pack(pady=10, padx=10)
+        self.label_longueur.pack(side="left", pady=10, padx=10)
+        self.entry_longueur = ctk.CTkEntry(self.frame_DXF_longueur)
+        self.entry_longueur.pack(pady=10, padx=10)
 
         self.var_bouleen = ctk.BooleanVar()
         self.checkbox_bouleen = ctk.CTkCheckBox(
@@ -142,7 +142,6 @@ class Application(ctk.CTk):
             width=300,
             height=42,
             corner_radius=15,
-            fg_color="transparent",
             border_width=2,
             font=("Dubai", 18),
             command=self.generer,
@@ -156,8 +155,7 @@ class Application(ctk.CTk):
             command=self.launch_generate_DXF,
             height=self.frame_DXF_height,
             width=320,
-            corner_radius=15,
-            fg_color="transparent",
+            corner_radius=30,
             border_width=2,
             font=("Dubai", 25),
         )
@@ -262,7 +260,7 @@ class Application(ctk.CTk):
                 return
 
             hauteur = self.longueur_finale
-            largeur = float(self.entry_largeur.get())
+            longueur = float(self.entry_longueur.get())
             bouleen = self.var_bouleen.get()
             chemin_dossier = self.label_chemin_dossier.cget("text")
             nom_fichier = self.entry_name.get()
@@ -278,17 +276,17 @@ class Application(ctk.CTk):
                 )
                 return
 
-            self.generer_dxf(hauteur, largeur, bouleen, chemin_dossier, nom_fichier)
-            self.entry_largeur.delete(0, ctk.END)
+            self.generer_dxf(hauteur, longueur, bouleen, chemin_dossier, nom_fichier)
+            self.entry_longueur.delete(0, ctk.END)
             self.entry_name.delete(0, ctk.END)
 
         except ValueError:
             messagebox.showerror(
                 "Erreur",
-                "Veuillez entrer des valeurs numériques valides pour la largeur.",
+                "Veuillez entrer des valeurs numériques valides pour la longueur.",
             )
 
-    def generer_dxf(self, hauteur, largeur, bouleen, chemin_dossier, nom_fichier):
+    def generer_dxf(self, hauteur, longueur, bouleen, chemin_dossier, nom_fichier):
         # Vérifie que le dossier existe, sinon le crée
         if not os.path.exists(chemin_dossier):
             os.makedirs(chemin_dossier)
@@ -302,14 +300,14 @@ class Application(ctk.CTk):
         msp = doc.modelspace()
 
         # Trace le rectangle
-        points = [(0, 0), (largeur, 0), (largeur, hauteur), (0, hauteur), (0, 0)]
+        points = [(0, 0), (longueur, 0), (longueur, hauteur), (0, hauteur), (0, 0)]
         msp.add_lwpolyline(points, close=True)
 
         # Ajoute les cercles si bouleen est True
         if bouleen:
             rayon = 1.75  # Diamètre 3.5 divisé par 2
             centre_gauche = (5, hauteur - 5)
-            centre_droit = (largeur - 5, hauteur - 5)
+            centre_droit = (longueur - 5, hauteur - 5)
             msp.add_circle(centre_gauche, rayon)
             msp.add_circle(centre_droit, rayon)
 
@@ -445,7 +443,17 @@ class Application(ctk.CTk):
         angles_values,
         pertes_values,
     ):
-        fig, ax = plt.subplots(figsize=(4, 4))
+            # Définir la taille du graphique en pixels (par exemple 600x400 pixels) et un DPI de 100
+        width_pixels = 320
+        height_pixels = 320
+        dpi = 100
+        
+        # Convertir la taille en pouces
+        fig_width_inch = width_pixels / dpi
+        fig_height_inch = height_pixels / dpi
+
+        # Créer la figure avec la taille en pouces et le DPI spécifié
+        fig, ax = plt.subplots(figsize=(fig_width_inch, fig_height_inch), dpi=dpi)
 
         ax.scatter(
             angles_sorted, pertes_sorted, color="blue", label="Perte au pli (bleu)"
@@ -458,14 +466,15 @@ class Application(ctk.CTk):
             pertes_values,
             color="red",
             label="Points saisis (rouge)",
-            zorder=5,
+            zorder=5
         )
 
-        ax.set_xlabel("Angle (degrés)")
-        ax.set_ylabel("Perte au pli (mm)")
-        ax.set_title("Perte au pliage en fonction de l'angle")
+        ax.set_xlabel("Angle (degrés)", fontsize=6)
+        ax.set_ylabel("Perte au pli (mm)", fontsize=6)
+        ax.set_title("Perte au pliage en fonction de l'angle", fontsize=8)
+        ax.tick_params(axis='both', which='major', labelsize=5)  # Taille réduite pour les ticks
         ax.grid(True)
-        ax.legend()
+        ax.legend(fontsize=6)
 
         for widget in self.frame_graphique.winfo_children():
             widget.destroy()
@@ -480,7 +489,7 @@ class Application(ctk.CTk):
         developes = np.array(self.donnees_materiaux[premiere_matiere]["developes"])
 
         pertes = 100 - developes
-
+#longueur
         angles_sorted = np.sort(angles)
         pertes_sorted = pertes[np.argsort(angles)]
 
