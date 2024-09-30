@@ -9,11 +9,17 @@ import scipy
 import os
 import ezdxf
 import sys
+import ctypes
 from PIL import Image
 from scipy.interpolate import CubicSpline
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from tkinter import filedialog, messagebox
+
+# Obtenir le facteur de mise à l'échelle du système (exemple pour Windows)
+user32 = ctypes.windll.user32
+user32.SetProcessDPIAware()
+
 
 
 def get_resource_path(relative_path):
@@ -30,7 +36,9 @@ def get_resource_path(relative_path):
 # Pour les autres images dans le dossier img
 image_path1 = get_resource_path('img\\copyL.png')
 image_path2 = get_resource_path('img\\copy.png')
-
+image_path3 = get_resource_path('img\\icon.ico')
+image_path4 = get_resource_path('img\\generateDark.png')
+image_path5 = get_resource_path('img\\generateLight.png')
 
 
 matplotlib.use("TkAgg")  # Utilise le backend Tkinter
@@ -39,7 +47,9 @@ matplotlib.use("TkAgg")  # Utilise le backend Tkinter
 class Application(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title("Calcul de Développé avec Perte au Pli")
+        ctk.set_appearance_mode("system")
+        self.title("Calcul de Développé avec Perte au Pli Flatten Plate V1.4")
+        self.iconbitmap(image_path3)
         self.geometry("770x670+50+50")
         self.resizable(False, False)
         self.protocol("WM_DELETE_WINDOW", self.fermer_fenetre)
@@ -56,6 +66,13 @@ class Application(ctk.CTk):
             size=(24, 24),
         )
 
+        # Chargement des images
+        self.image_generate_dxf = ctk.CTkImage(
+            light_image=Image.open(image_path5),
+            dark_image=Image.open(image_path4),
+            size=(90, 110),
+        )
+
         # Configuration de l'interface graphique
         self.setup_gui()
 
@@ -68,7 +85,7 @@ class Application(ctk.CTk):
 
     def setup_gui(self):
         # Cadres principaux
-        self.frame_principal = ctk.CTkFrame(self, width=450, corner_radius=10)
+        self.frame_principal = ctk.CTkFrame(self, width=450, corner_radius=15)
         self.frame_principal.place(x=350, y=15)
 
         self.frame_graphique = ctk.CTkFrame(self)
@@ -88,7 +105,7 @@ class Application(ctk.CTk):
 
         self.label_name = ctk.CTkLabel(self.frame_DXF_name, text="Nom de pièce :")
         self.label_name.pack(side="left", pady=10, padx=10)
-        self.entry_name = ctk.CTkEntry(self.frame_DXF_name)
+        self.entry_name = ctk.CTkEntry(self.frame_DXF_name, corner_radius=15)
         self.entry_name.pack(pady=10, padx=10)
 
         # Cadre pour la longueur
@@ -101,7 +118,7 @@ class Application(ctk.CTk):
             self.frame_DXF_longueur, text="Longueur :       "
         )
         self.label_longueur.pack(side="left", pady=10, padx=10)
-        self.entry_longueur = ctk.CTkEntry(self.frame_DXF_longueur)
+        self.entry_longueur = ctk.CTkEntry(self.frame_DXF_longueur, corner_radius=15)
         self.entry_longueur.pack(pady=10, padx=10)
 
         self.var_bouleen = ctk.BooleanVar()
@@ -120,10 +137,13 @@ class Application(ctk.CTk):
             x=10, y=10 + 30 + 28 * 2 + 5 + self.frame_DXF_name_height
         )
 
-        self.label_chemin_dossier = ctk.CTkLabel(
+        self.label_chemin_dossier = ctk.CTkEntry(
             self.frame_chemin_dossier,
-            text="sélectionnez un dossier de sortie",
-            anchor="w",
+            fg_color='transparent',
+            justify="center",
+            width=285,
+            placeholder_text="sélectionnez un dossier de sortie",
+            border_width=0
         )
         self.label_chemin_dossier.pack(side="bottom", padx=1, pady=3)
 
@@ -132,6 +152,7 @@ class Application(ctk.CTk):
             width=200,
             text="Parcourir",
             command=self.ouvrir_dossier,
+            corner_radius=15
         )
         self.bouton_parcourir.pack(side="top", padx=48, pady=5)
 
@@ -151,12 +172,14 @@ class Application(ctk.CTk):
         # Bouton pour afficher le cadre DXF
         self.btn_DXF = ctk.CTkButton(
             self,
-            text="Générer un fichier DXF",
+            text="",
+            fg_color="transparent",
             command=self.launch_generate_DXF,
-            height=self.frame_DXF_height,
+            image=self.image_generate_dxf,
             width=320,
-            corner_radius=30,
-            border_width=2,
+            height=self.frame_DXF_height,
+            corner_radius=20,
+            border_width=0,
             font=("Dubai", 25),
         )
 
@@ -172,7 +195,7 @@ class Application(ctk.CTk):
         self.label_materiau.grid(row=0, column=0, padx=10, pady=7)
 
         self.combobox_materiau = ctk.CTkComboBox(
-            self.frame_materiau, width=170, values=list(self.donnees_materiaux.keys())
+            self.frame_materiau, corner_radius=15, width=180, values=list(self.donnees_materiaux.keys())
         )
         self.combobox_materiau.grid(row=0, column=1, padx=10, pady=5)
         self.combobox_materiau.set(list(self.donnees_materiaux.keys())[0])
@@ -189,7 +212,7 @@ class Application(ctk.CTk):
         self.entry_nombre_plis_var = tk.StringVar()
         self.entry_nombre_plis_var.trace("w", self.demander_angles)
         self.entry_nombre_plis = ctk.CTkEntry(
-            self.frame_nombre_plis, textvariable=self.entry_nombre_plis_var
+            self.frame_nombre_plis, textvariable=self.entry_nombre_plis_var, corner_radius=15
         )
         self.entry_nombre_plis.grid(row=0, column=1, padx=10, pady=7)
 
@@ -205,11 +228,11 @@ class Application(ctk.CTk):
         )
         self.label_longueur_initiale.grid(row=0, column=0, padx=10, pady=10)
 
-        self.entry_longueur_initiale = ctk.CTkEntry(self.frame_longueur)
+        self.entry_longueur_initiale = ctk.CTkEntry(self.frame_longueur, corner_radius=15)
         self.entry_longueur_initiale.grid(row=0, column=1, padx=10, pady=10)
 
         self.btn_calculer = ctk.CTkButton(
-            self.frame_longueur, text="Calculer", command=self.calculer_resultat
+            self.frame_longueur, text="Calculer", command=self.calculer_resultat, corner_radius=15
         )
         self.btn_calculer.grid(row=1, column=0, columnspan=2, pady=10)
 
@@ -225,7 +248,7 @@ class Application(ctk.CTk):
             self.frame_resultat,
             text="",
             font=("Helvetica", 18),
-            corner_radius=10,
+            corner_radius=15,
         )
         self.label_resultat.grid(row=0, column=0, padx=10, pady=5)
 
@@ -248,7 +271,8 @@ class Application(ctk.CTk):
     def ouvrir_dossier(self):
         dossier = filedialog.askdirectory()
         if dossier:
-            self.label_chemin_dossier.configure(text=dossier)
+            self.label_chemin_dossier.delete(0, ctk.END)  # Effacer le contenu existant
+            self.label_chemin_dossier.insert(0, dossier)  # Insérer le nouveau chemin
 
     def generer(self):
         try:
@@ -262,7 +286,7 @@ class Application(ctk.CTk):
             hauteur = self.longueur_finale
             longueur = float(self.entry_longueur.get())
             bouleen = self.var_bouleen.get()
-            chemin_dossier = self.label_chemin_dossier.cget("text")
+            chemin_dossier = self.label_chemin_dossier.get()
             nom_fichier = self.entry_name.get()
 
             if (
@@ -279,7 +303,7 @@ class Application(ctk.CTk):
             self.generer_dxf(hauteur, longueur, bouleen, chemin_dossier, nom_fichier)
             self.entry_longueur.delete(0, ctk.END)
             self.entry_name.delete(0, ctk.END)
-
+#largeur
         except ValueError:
             messagebox.showerror(
                 "Erreur",
@@ -337,7 +361,7 @@ class Application(ctk.CTk):
                 )
                 label_angle.grid(row=i, column=0, padx=10, pady=10)
 
-                entry_angle = ctk.CTkEntry(self.frame_angles)
+                entry_angle = ctk.CTkEntry(self.frame_angles, corner_radius=15)
                 entry_angle.grid(row=i, column=1, padx=10, pady=10)
                 self.angles_pli_entries.append(entry_angle)
 
@@ -443,10 +467,12 @@ class Application(ctk.CTk):
         angles_values,
         pertes_values,
     ):
-            # Définir la taille du graphique en pixels (par exemple 600x400 pixels) et un DPI de 100
+        scale_factor = user32.GetDpiForWindow(self.frame_graphique.winfo_id()) / 96
+        # Définir la taille du graphique en pixels (par exemple 600x400 pixels) et un DPI de 100
         width_pixels = 320
         height_pixels = 320
-        dpi = 100
+        base_dpi = 100
+        dpi = base_dpi * scale_factor  # Ajuster le DPI en fonction de la mise à l'échelle
         
         # Convertir la taille en pouces
         fig_width_inch = width_pixels / dpi
@@ -469,12 +495,12 @@ class Application(ctk.CTk):
             zorder=5
         )
 
-        ax.set_xlabel("Angle (degrés)", fontsize=6)
-        ax.set_ylabel("Perte au pli (mm)", fontsize=6)
-        ax.set_title("Perte au pliage en fonction de l'angle", fontsize=8)
-        ax.tick_params(axis='both', which='major', labelsize=5)  # Taille réduite pour les ticks
+        ax.set_xlabel("Angle (degrés)", fontsize=5)
+        ax.set_ylabel("Perte au pli (mm)", fontsize=5)
+        ax.set_title("Perte au pliage en fonction de l'angle", fontsize=6)
+        ax.tick_params(axis='both', which='major', labelsize=4)  # Taille réduite pour les ticks
         ax.grid(True)
-        ax.legend(fontsize=6)
+        ax.legend(fontsize=5)
 
         for widget in self.frame_graphique.winfo_children():
             widget.destroy()
