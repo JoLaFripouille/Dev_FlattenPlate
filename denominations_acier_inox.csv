@@ -1,0 +1,29 @@
+Type,Dénomination,Norme
+Aciers Carbone,S235JR,EN 10025-2
+Aciers Carbone,S275JR,EN 10025-2
+Aciers Carbone,S355JR,EN 10025-2
+Aciers Carbone,C45,EN 10083-2
+Aciers Carbone,C35,EN 10083-2
+Aciers Carbone,C40,EN 10083-2
+Aciers Carbone,XC38,NF A 35-552
+Aciers Carbone,XC48,NF A 35-552
+Aciers Carbone,E24,NF A 35-501
+Aciers Alliés,42CrMo4,EN 10083-3
+Aciers Alliés,34CrNiMo6,EN 10083-3
+Aciers Alliés,30CrNiMo8,EN 10083-3
+Aciers Alliés,16MnCr5,EN 10084
+Aciers Alliés,40NiCrMo7,EN 10083-3
+Aciers Inoxydables Austénitiques,304 (X5CrNi18-10),EN 10088-1
+Aciers Inoxydables Austénitiques,304L (X2CrNi18-9),EN 10088-1
+Aciers Inoxydables Austénitiques,316 (X5CrNiMo17-12-2),EN 10088-1
+Aciers Inoxydables Austénitiques,316L (X2CrNiMo17-12-2),EN 10088-1
+Aciers Inoxydables Austénitiques,321 (X6CrNiTi18-10),EN 10088-1
+Aciers Inoxydables Austénitiques,310S (X12CrNi25-21),EN 10088-1
+Aciers Inoxydables Ferritiques,430 (X6Cr17),EN 10088-1
+Aciers Inoxydables Ferritiques,409 (X2CrTi12),EN 10088-1
+Aciers Inoxydables Ferritiques,439 (X2CrMoTi18-2),EN 10088-1
+Aciers Inoxydables Martensitiques,410 (X12Cr13),EN 10088-1
+Aciers Inoxydables Martensitiques,420 (X20Cr13),EN 10088-1
+Aciers Inoxydables Martensitiques,431 (X17CrNi16-2),EN 10088-1
+Aciers Inoxydables Duplex,2205 (X2CrNiMoN22-5-3),EN 10088-1
+Aciers Inoxydables Duplex,2507 (X2CrNiMoN25-7-4),EN 10088-1
