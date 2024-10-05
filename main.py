@@ -10,6 +10,7 @@ import os
 import ezdxf
 import sys
 import ctypes
+import requests
 from PIL import Image
 from scipy.interpolate import CubicSpline
 import matplotlib.pyplot as plt
@@ -19,7 +20,8 @@ from tkinter import filedialog, messagebox
 # Obtenir le facteur de mise à l'échelle du système (exemple pour Windows)
 user32 = ctypes.windll.user32
 user32.SetProcessDPIAware()
-
+GITHUB_URL = "https://raw.githubusercontent.com/JoLaFripouille/Dev_FlattenPlate/main/data.json"
+LOCAL_FILE = "data.json"
 
 
 def get_resource_path(relative_path):
@@ -48,7 +50,7 @@ class Application(ctk.CTk):
     def __init__(self):
         super().__init__()
         ctk.set_appearance_mode("system")
-        self.title("Calcul de Développé avec Perte au Pli Flatten Plate V1.4")
+        self.title("Calcul de Développé avec Perte au Pli Flatten Plate V1.5")
         self.iconbitmap(image_path3)
         self.geometry("770x670+50+50")
         self.resizable(False, False)
@@ -82,6 +84,8 @@ class Application(ctk.CTk):
     def charger_donnees_materiau(self, nom_fichier):
         with open(nom_fichier, "r") as f:
             return json.load(f)
+    
+    
 
     def setup_gui(self):
         # Cadres principaux
@@ -184,6 +188,9 @@ class Application(ctk.CTk):
         )
 
         
+        # Bouton pour chercher les mises à jour
+        self.button_update = ctk.CTkButton(self, text="Chercher mise à jour data", height=32, width=155, corner_radius=16, command=self.check_for_updates)
+        self.button_update.place(x=575, y=625)   
 
         # Cadre pour la sélection du matériau
         self.frame_materiau = ctk.CTkFrame(self.frame_principal)
@@ -263,6 +270,80 @@ class Application(ctk.CTk):
             command=self.copier_texte_au_presse_papiers,
         )
         self.btn_copier.grid(row=0, column=1, pady=5, padx=9)
+
+    def check_for_updates(self):
+        try:
+            # Télécharger le fichier depuis GitHub
+            response = requests.get(GITHUB_URL)
+            response.raise_for_status()  # Vérifie s'il y a des erreurs lors de la requête
+
+            # Charger le contenu distant
+            remote_data = response.json()
+
+            # Vérifier si le fichier local existe
+            if os.path.exists(LOCAL_FILE):
+                with open(LOCAL_FILE, 'r') as local_file:
+                    local_data = json.load(local_file)
+
+                # Comparer les deux fichiers
+                if local_data == remote_data:
+                    self.popup('', "Le fichier est déjà à jour.")
+                    
+                else:
+                    # Mise à jour disponible, changer l'apparence du bouton
+                    self.popup('', "Mise à jour disponible !")
+                    self.button_update.configure(
+                        text="Télécharger mise à jour", 
+                        fg_color="yellow", 
+                        text_color="black", 
+                        border_color="black",
+                        hover_color="#c4c22a",
+                        border_width=3, 
+                        command=self.update_json
+                    )
+            else:
+                # Si le fichier local n'existe pas, il doit être mis à jour
+                self.popup('', "Aucune version locale. Mise à jour requise !")
+                self.button_update.configure(
+                    text="Télécharger mise à jour", 
+                    fg_color="yellow", 
+                    hover_color="#c4c22a",
+                    text_color="black", 
+                    border_color="black", 
+                    border_width=3, 
+                    command=self.update_json
+                )
+
+        except Exception as e:
+            self.popup('', f"Erreur: {str(e)}")
+
+
+    def update_json(self):
+        try:
+            # Télécharger le fichier depuis GitHub
+            response = requests.get(GITHUB_URL)
+            response.raise_for_status()  # Vérifie s'il y a des erreurs lors de la requête
+
+            # Sauvegarder le fichier localement
+            with open(LOCAL_FILE, 'w') as file:
+                file.write(response.text)
+            self.popup('', f"Mise à jour réussie !")
+            self.button_update.configure(
+                text="Chercher mise à jour data", 
+                fg_color="gray", 
+                text_color="white", 
+                border_color="black", 
+                hover_color="#9c9c9c",
+                border_width=0, 
+                command=self.check_for_updates
+            )
+
+        except Exception as e:
+            self.popup('', f"Erreur: {str(e)}")
+            
+
+    def run(self):
+        self.app.mainloop()
 
     def launch_generate_DXF(self):
         self.btn_DXF.place_forget()
@@ -382,7 +463,7 @@ class Application(ctk.CTk):
         label_popup = ctk.CTkLabel(
             frame_popup,
             height=20,
-            text=f'"{valeur}" {suffixe}',
+            text=f'{valeur}  {suffixe}',
             font=("Dubai", 16),
         )
         label_popup.pack(pady=5, padx=20)
