@@ -337,6 +337,7 @@ class Application(ctk.CTk):
                 border_width=0, 
                 command=self.check_for_updates
             )
+            self.combobox_materiau.set(list(self.donnees_materiaux.keys())[0])
 
         except Exception as e:
             self.popup('', f"Erreur: {str(e)}")
