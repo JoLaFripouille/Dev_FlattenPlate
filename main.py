@@ -7,6 +7,7 @@ import PIL
 import tkinter
 import scipy
 import os
+import winreg
 import ezdxf
 import sys
 import ctypes
@@ -85,7 +86,17 @@ class Application(ctk.CTk):
         with open(nom_fichier, "r") as f:
             return json.load(f)
     
-    
+
+    def is_dark_mode(self):
+        try:
+            registry = winreg.ConnectRegistry(None, winreg.HKEY_CURRENT_USER)
+            key = winreg.OpenKey(registry, r'SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize')
+            value, _ = winreg.QueryValueEx(key, 'AppsUseLightTheme')
+            winreg.CloseKey(key)
+            return value == 0  # Si 0, le mode sombre est activé, sinon c'est le mode clair
+        except Exception as e:
+            print(f"Erreur lors de la détection du mode : {e}")
+            return False  # Si une erreur survient, on suppose que le mode clair est activé
 
     def setup_gui(self):
         # Cadres principaux
@@ -325,9 +336,11 @@ class Application(ctk.CTk):
             response.raise_for_status()  # Vérifie s'il y a des erreurs lors de la requête
 
             # Sauvegarder le fichier localement
-            with open(LOCAL_FILE, 'w') as file:
+            with open(LOCAL_FILE, 'w', encoding='utf-8') as file:
                 file.write(response.text)
             self.popup('', f"Mise à jour réussie !")
+            self.button_update.configure(state='disabled')
+
             self.button_update.configure(
                 text="Chercher mise à jour data", 
                 fg_color="gray", 
@@ -337,10 +350,15 @@ class Application(ctk.CTk):
                 border_width=0, 
                 command=self.check_for_updates
             )
-            self.combobox_materiau.set(list(self.donnees_materiaux.keys())[0])
+            self.button_update.configure(state='normal')
+            self.donnees_materiaux = self.charger_donnees_materiau(LOCAL_FILE)
+            self.combobox_materiau.configure(values=list(self.donnees_materiaux.keys()))
+
 
         except Exception as e:
             self.popup('', f"Erreur: {str(e)}")
+        except requests.exceptions.RequestException as e:
+            self.popup('', f"Erreur lors de la requête : {str(e)}")
             
 
     def run(self):
@@ -385,7 +403,7 @@ class Application(ctk.CTk):
             self.generer_dxf(hauteur, longueur, bouleen, chemin_dossier, nom_fichier)
             self.entry_longueur.delete(0, ctk.END)
             self.entry_name.delete(0, ctk.END)
-#largeur
+
         except ValueError:
             messagebox.showerror(
                 "Erreur",
@@ -560,8 +578,29 @@ class Application(ctk.CTk):
         fig_width_inch = width_pixels / dpi
         fig_height_inch = height_pixels / dpi
 
+        # Vérifier si le mode sombre est activé
+        dark_mode = self.is_dark_mode()
+
+        if dark_mode:
+            # Couleurs pour le mode sombre
+            bg_color = '#242424'  # Fond de la figure (gris foncé)
+            label_color = 'lightgray'
+            tick_color = 'white'
+            spine_color = '#242424'
+            grid_color = "#333333"
+        else:
+            # Couleurs pour le mode clair
+            bg_color = '#ebebeb'  # Fond de la figure (blanc)
+            label_color = 'black'
+            tick_color = 'black'
+            spine_color = '#ebebeb'
+            grid_color = "#dbdbdb"
+
         # Créer la figure avec la taille en pouces et le DPI spécifié
-        fig, ax = plt.subplots(figsize=(fig_width_inch, fig_height_inch), dpi=dpi)
+        fig, ax = plt.subplots(figsize=(fig_width_inch, fig_height_inch), dpi=dpi, facecolor=bg_color)
+
+        # Définir la couleur de fond de l'axe (optionnel)
+        ax.set_facecolor(bg_color)
 
         ax.scatter(
             angles_sorted, pertes_sorted, color="blue", label="Perte au pli (bleu)"
@@ -577,12 +616,18 @@ class Application(ctk.CTk):
             zorder=5
         )
 
-        ax.set_xlabel("Angle (degrés)", fontsize=5)
-        ax.set_ylabel("Perte au pli (mm)", fontsize=5)
-        ax.set_title("Perte au pliage en fonction de l'angle", fontsize=6)
-        ax.tick_params(axis='both', which='major', labelsize=4)  # Taille réduite pour les ticks
-        ax.grid(True)
+        ax.set_xlabel("Angle (degrés)", fontsize=5, color=label_color)
+        ax.set_ylabel("Perte au pli (mm)", fontsize=5, color=label_color)
+        ax.set_title("Perte au pliage en fonction de l'angle", fontsize=6, color=tick_color)
+        ax.tick_params(axis='both', which='major', labelsize=4,color=bg_color, labelcolor=label_color)  # Taille réduite pour les ticks
+        ax.grid(True,color=grid_color)
         ax.legend(fontsize=5)
+
+            # Personnaliser la couleur du contour (les spines)
+        ax.spines['top'].set_color(spine_color)  # Bord supérieur en noir
+        ax.spines['right'].set_color(spine_color)  # Bord droit en noir
+        ax.spines['left'].set_color(spine_color)  # Bord gauche en bleu
+        ax.spines['bottom'].set_color(spine_color)  # Bord inférieur en bleu
 
         for widget in self.frame_graphique.winfo_children():
             widget.destroy()
@@ -597,7 +642,7 @@ class Application(ctk.CTk):
         developes = np.array(self.donnees_materiaux[premiere_matiere]["developes"])
 
         pertes = 100 - developes
-#longueur
+
         angles_sorted = np.sort(angles)
         pertes_sorted = pertes[np.argsort(angles)]
 
